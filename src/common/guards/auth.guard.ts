@@ -54,6 +54,8 @@ export class AuthGuard implements CanActivate {
         response.cookie('accessToken', newAccessToken, {
           signed: true,
           httpOnly: true,
+          secure: true, 
+          sameSite: 'none' as const,
           maxAge: 15 * 60 * 1000,
         });
 
