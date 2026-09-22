@@ -60,8 +60,10 @@ export class AuthService{
         const heshpass = await this.HeshPass(getAdminPass())
         await this.model.create({
             first_name:'admin',
-            last_name:'',
+            last_name:'SuperAdmin',
             login:getAdminLogin(),
+            phone: '+998901234567',
+            data_both: new Date().toISOString(),
             password:heshpass,
             role:UserRoles.superAdmin,
         })
