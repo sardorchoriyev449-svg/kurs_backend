@@ -1,0 +1,1 @@
+export const getMongoUrl = (): string => process.env.MONGO_URL as string

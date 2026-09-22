@@ -1,0 +1,1 @@
+export const getCookieToken = (): string => process.env.COOKIE_TOKEN as string

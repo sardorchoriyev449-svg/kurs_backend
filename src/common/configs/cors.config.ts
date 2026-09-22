@@ -1,0 +1,1 @@
+export const getCorsHost = (): string => (process.env.CORS_ORIGIN ?? 'http://localhost:5173') as string
