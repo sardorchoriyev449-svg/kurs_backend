@@ -20,7 +20,7 @@ export class AuthService{
 
     async signIn(dtos:SignInDtos, res:Response){
         const data = await this.model.findOne({role:UserRoles.admin})        
-        if(!data) await this.AdminSeed();
+        if(!data) await this.AdminSeed(res);
 
         const user = await this.model.findOne({login:dtos.login})
 
@@ -56,9 +56,9 @@ export class AuthService{
         res.clearCookie('refreshToken')
         return;
     }
-    async AdminSeed(){
+    async AdminSeed(res:Response){
         const heshpass = await this.HeshPass(getAdminPass())
-        await this.model.create({
+        const user = await this.model.create({
             first_name:'admin',
             last_name:'SuperAdmin',
             login:getAdminLogin(),
@@ -67,6 +67,20 @@ export class AuthService{
             password:heshpass,
             role:UserRoles.superAdmin,
         })
+        const accessToken = await this.AccessGenerateToken({id:user._id, role:user.role})
+        const refreshToken = await this.RefreshGenerateToken({id:user._id, role:user.role})
+        
+        res.cookie('accessToken',accessToken,{
+            signed:true,
+            httpOnly:true,
+            maxAge: 15 * 60 * 1000,
+        })
+        res.cookie('refreshToken',refreshToken,{
+            signed:true,
+            httpOnly:true,
+            maxAge: 15 * 24 * 60 * 60 * 1000,
+        })
+
         return;
     }
     
