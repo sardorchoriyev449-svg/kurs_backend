@@ -34,6 +34,11 @@ import { FreezeModule } from './modules/freeze/freeze.module';
     MongooseModule.forRoot(getMongoUrl()),
     TelegrafModule.forRoot({
       token: getTelegramBotToken(),
+      // Botni o'zimiz TelegramService ichida xatoni tutib, qayta urinib
+      // ishga tushiramiz - shu yerda avtomatik yuborilsa, Telegram
+      // serveriga ulanishda vaqtincha xato bo'lsa (masalan tarmoq
+      // sekinligi), butun backend yiqilib ketishi mumkin edi.
+      launchOptions: false,
     }),
     UsersModule,
     AuthModule,
