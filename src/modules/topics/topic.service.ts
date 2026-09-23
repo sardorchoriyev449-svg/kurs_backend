@@ -47,6 +47,7 @@ export class TopicService {
             course_id: dto.course_id,
             name: dto.name,
             order,
+            description: dto.description,
             created_by: createdBy,
         })
 
@@ -61,6 +62,7 @@ export class TopicService {
             name: dto.name ?? data.name,
             course_id: dto.course_id ?? data.course_id,
             order: dto.order ?? data.order,
+            description: dto.description ?? data.description,
         }, { new: true })
 
         return { success: true, message: `Mavzu yangilandi!`, data: updated }

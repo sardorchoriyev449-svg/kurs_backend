@@ -14,6 +14,9 @@ export class Topic {
     @Prop({ type: SchemaTypes.Number, required: true, default: 0 })
     order: number
 
+    @Prop({ type: SchemaTypes.String, required: false })
+    description: string
+
     @Prop({ type: SchemaTypes.ObjectId, ref: Users.name, required: false })
     created_by: Types.ObjectId
 }

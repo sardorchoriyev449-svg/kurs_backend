@@ -15,4 +15,8 @@ export class CreateTopicDto {
     @Min(0)
     @IsOptional()
     order: number
+
+    @IsString()
+    @IsOptional()
+    description: string
 }
