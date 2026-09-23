@@ -76,8 +76,8 @@ export class HomeWorkService {
         const existing = await this.model.findOne({ assignment_id, student_id: req?.user?.id })
         if (existing) return { success: false, message: `Siz bu vazifani allaqachon topshirgansiz!` }
 
-        const suspended = await this.assignmentService.isStudentSuspendedForAssignment(assignment_id, req.user.id)
-        if (suspended) return { success: false, message: `Siz ushbu guruhda vaqtincha muzlatilgansiz, shuning uchun vazifa topshira olmaysiz. Administrator bilan bog'laning.` }
+        const canSubmit = await this.assignmentService.canStudentSubmit(assignment_id, req.user.id)
+        if (!canSubmit) return { success: false, message: `Siz muzlatilganingizdan keyin berilgan vazifani topshira olmaysiz. Administrator bilan bog'laning.` }
 
         const newWork = await this.model.create({
             file_name: dtos.file_name,

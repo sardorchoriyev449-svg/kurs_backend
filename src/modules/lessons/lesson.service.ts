@@ -48,22 +48,27 @@ export class LessonService {
   }
 
   async getByGroup(groupId: string, requestingStudentId?: string) {
+    // Muzlatilgan talaba muzlatilgan payttagacha (aniq vaqti bilan) qo'shilgan
+    // darslarni ko'raveradi - to'lov qilingan davr uchun kirish saqlanadi.
+    // Muzlatilgandan keyin qo'shilgan yangi darslar esa ko'rinmaydi.
+    let suspendedAt: Date | null = null;
     if (requestingStudentId) {
-      const suspended = await this.groupModel.exists({
-        _id: groupId,
-        suspended_students: requestingStudentId,
-      });
-      if (suspended) {
-        return {
-          success: false,
-          message: `Siz ushbu guruhda vaqtincha muzlatilgansiz. Administrator bilan bog'laning.`,
-          data: [],
-        };
+      const group = await this.groupModel.findOne(
+        { _id: groupId, 'suspended_students.student': requestingStudentId },
+        { 'suspended_students.$': 1 },
+      );
+      if (group?.suspended_students?.length) {
+        suspendedAt = group.suspended_students[0].suspended_at;
       }
     }
 
+    const query: Record<string, unknown> = { group_id: new Types.ObjectId(groupId) };
+    if (suspendedAt) {
+      query.createdAt = { $lte: suspendedAt };
+    }
+
     const lessons = await this.model
-      .find({ group_id: new Types.ObjectId(groupId) })
+      .find(query)
       .populate('author', 'first_name last_name')
       .populate('topic_id', 'name')
       .sort({ date: -1, createdAt: -1 });

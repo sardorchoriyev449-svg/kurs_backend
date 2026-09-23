@@ -17,21 +17,21 @@ export class HomeworkAssignmentService {
     ) {}
 
     async getByGroup(groupId: string, requestingStudentId?: string) {
+        // Muzlatilgan talaba muzlatilgan payttagacha (aniq vaqti bilan) berilgan
+        // vazifalarni ko'raveradi, keyin qo'shilganlari ko'rinmaydi.
+        const query: Record<string, unknown> = { group_id: groupId }
         if (requestingStudentId) {
-            const suspended = await this.groupModel.exists({
-                _id: groupId,
-                suspended_students: requestingStudentId,
-            })
-            if (suspended) {
-                return {
-                    success: false,
-                    message: `Siz ushbu guruhda vaqtincha muzlatilgansiz. Administrator bilan bog'laning.`,
-                    data: [],
-                }
+            const group = await this.groupModel.findOne(
+                { _id: groupId, 'suspended_students.student': requestingStudentId },
+                { 'suspended_students.$': 1 },
+            )
+            const suspendedAt = group?.suspended_students?.length ? group.suspended_students[0].suspended_at : null
+            if (suspendedAt) {
+                query.createdAt = { $lte: suspendedAt }
             }
         }
 
-        const data = await this.model.find({ group_id: groupId })
+        const data = await this.model.find(query)
             .populate('topic_id', 'name')
             .sort({ createdAt: -1 })
 
@@ -103,15 +103,22 @@ export class HomeworkAssignmentService {
         return { success: true, message: `Vazifa yangilandi!`, data: updated }
     }
 
-    async isStudentSuspendedForAssignment(assignmentId: string, studentId: string): Promise<boolean> {
+    // Talaba shu topshiriqni topshira oladimi: muzlatilmagan bo'lsa - ha;
+    // muzlatilgan bo'lsa ham, agar topshiriq muzlatilgan paytdan OLDIN berilgan
+    // bo'lsa - baribir topshirishga ruxsat (to'lov qilingan davr uchun).
+    async canStudentSubmit(assignmentId: string, studentId: string): Promise<boolean> {
         const assignment = await this.model.findById(assignmentId)
         if (!assignment) return false
 
-        const suspended = await this.groupModel.exists({
-            _id: assignment.group_id,
-            suspended_students: studentId,
-        })
-        return !!suspended
+        const group = await this.groupModel.findOne(
+            { _id: assignment.group_id, 'suspended_students.student': studentId },
+            { 'suspended_students.$': 1 },
+        )
+        const suspendedAt = group?.suspended_students?.length ? group.suspended_students[0].suspended_at : null
+        if (!suspendedAt) return true
+
+        const assignmentCreatedAt = (assignment as any).createdAt as Date
+        return assignmentCreatedAt <= suspendedAt
     }
 
     async delete(id: string) {
