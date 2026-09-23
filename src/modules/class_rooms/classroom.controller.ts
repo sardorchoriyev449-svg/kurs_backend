@@ -41,6 +41,14 @@ export class ClassRoomController {
     return this.classRoomService.assignGroup(classroomId, groupId);
   }
 
+  @Delete(':id/assign-group/:groupId')
+  async unassignGroup(
+    @Param('id') classroomId: string,
+    @Param('groupId') groupId: string,
+  ) {
+    return this.classRoomService.unassignGroup(classroomId, groupId);
+  }
+
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.classRoomService.remove(id);

@@ -4,13 +4,13 @@ import { Model, Types } from 'mongoose';
 import { ClassRoom, ClassRoomDocument } from './model/classroom.model';
 import { CreateClassRoomDto } from './dtos/create-classroom.dto';
 import { UpdateClassRoomDto } from './dtos/update-classroom.dto';
-import { Group } from '../groups/model/group.model'; // <-- yo'lni loyihangizdagi haqiqiy joylashuvga moslang
+import { Group } from '../groups/model/group.model'; // <-- yo'lni loyihangizdagi haqiqiy joyga moslang
 
 @Injectable()
 export class ClassRoomService {
   constructor(
     @InjectModel(ClassRoom.name) private readonly model: Model<ClassRoomDocument>,
-    @InjectModel(Group.name) private readonly groupModel: Model<Group>, // <-- yangi qo'shildi
+    @InjectModel(Group.name) private readonly groupModel: Model<Group>,
   ) {}
 
   async create(dto: CreateClassRoomDto) {
@@ -81,21 +81,21 @@ export class ClassRoomService {
       return { success: false, message: 'Xona topilmadi!' };
     }
 
-    const alreadyAssigned = classroom.group_id.some((g) => g.toString() === groupId);
-    if (alreadyAssigned) {
-      return { success: false, message: 'Xona alaqachon birikan!' };
-    }
-
     const newGroup = await this.groupModel.findById(groupId);
     if (!newGroup) {
       return { success: false, message: 'Guruh topilmadi!' };
     }
 
-    // Xonada allaqachon turgan guruhlar bilan kun/vaqt to'qnashuvini tekshirish
-    if (classroom.group_id.length > 0) {
-      const existingGroups = await this.groupModel.find({
-        _id: { $in: classroom.group_id },
-      });
+    const alreadyHere = classroom.group_id.some((g) => g.toString() === groupId);
+    if (alreadyHere) {
+      return { success: false, message: 'Guruh allaqachon shu xonaga biriktirilgan!' };
+    }
+
+    // To'qnashuvni tekshirish: shu xonadagi BOSHQA guruhlar bilan kun/vaqt mos kelmasligi kerak
+    // (bu guruhning o'zi hisobga olinmaydi, chunki u hali shu xonaga qo'shilmagan)
+    const otherGroupIds = classroom.group_id.filter((g) => g.toString() !== groupId);
+    if (otherGroupIds.length > 0) {
+      const existingGroups = await this.groupModel.find({ _id: { $in: otherGroupIds } });
 
       for (const existingGroup of existingGroups) {
         const hasSharedDay = (existingGroup.lesson_days || []).some((day) =>
@@ -112,19 +112,46 @@ export class ClassRoomService {
       }
     }
 
+    // Bitta guruh faqat bitta xonada bo'lishi kerak — shuning uchun avval uni
+    // (agar bo'lsa) boshqa BARCHA xonalardan avtomatik chiqarib tashlaymiz
+    await this.model.updateMany(
+      { _id: { $ne: classroomId } },
+      { $pull: { group_id: new Types.ObjectId(groupId) } },
+    );
+
     const updatedRoom = await this.model.findByIdAndUpdate(
       classroomId,
       { $addToSet: { group_id: new Types.ObjectId(groupId) } },
       { new: true },
     );
 
-    if (!updatedRoom) {
-      return { success: false, message: 'Xona topilmadi!' };
-    }
-
     return {
       success: true,
       message: 'Guruh xonaga biriktirildi!',
+      data: updatedRoom,
+    };
+  }
+
+  async unassignGroup(classroomId: string, groupId: string) {
+    const classroom = await this.model.findById(classroomId);
+    if (!classroom) {
+      return { success: false, message: 'Xona topilmadi!' };
+    }
+
+    const wasThere = classroom.group_id.some((g) => g.toString() === groupId);
+    if (!wasThere) {
+      return { success: false, message: 'Guruh bu xonaga biriktirilmagan!' };
+    }
+
+    const updatedRoom = await this.model.findByIdAndUpdate(
+      classroomId,
+      { $pull: { group_id: new Types.ObjectId(groupId) } },
+      { new: true },
+    );
+
+    return {
+      success: true,
+      message: 'Guruh xonadan chiqarildi!',
       data: updatedRoom,
     };
   }
@@ -139,6 +166,8 @@ export class ClassRoomService {
       message: "Xona o'chirildi!",
     };
   }
+
+  // ------- Yordamchi funksiyalar -------
 
   private isTimeOverlap(rangeA: string, rangeB: string): boolean {
     const a = this.parseTimeRange(rangeA);
