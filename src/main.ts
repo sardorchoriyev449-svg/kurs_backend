@@ -1,39 +1,35 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../src/app.module';
-import cookieParser from 'cookie-parser';
-import { getCookieToken } from '../src/common/configs/cookie-token.config';
+import { AppModule } from './app.module';
+import cookieParser from 'cookie-parser'
+import { getCookieToken } from './common/configs/cookie-token.config';
 import { ValidationPipe } from '@nestjs/common';
-import { getCorsHost } from '../src/common/configs/cors.config';
+import { getCorsHost } from './common/configs/cors.config';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { Express } from 'express';
+import { join } from 'path';
 
-let cachedServer: Express;
-
-async function createNestServer(): Promise<Express> {
+async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  app.use(cookieParser(getCookieToken()));
+  app.use(cookieParser(getCookieToken()))
+
+  app.useStaticAssets(join(__dirname, '..','uploads'), {
+    prefix:'/uploads/'
+  })
 
   app.enableCors({
-    origin: (getCorsHost() || '').split(','),
+    origin: (getCorsHost()).split(','),
     credentials: true,
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
+  app.useGlobalPipes(new ValidationPipe({
+    transform:true,
+    whitelist:true,
+    forbidNonWhitelisted:true
+  }))
 
-  await app.init();
-  return app.getHttpAdapter().getInstance();
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port, '0.0.0.0', () => {
+    console.log(`Server is running on port: ${port}`);
+  });
 }
-
-export default async function handler(req: any, res: any) {
-  if (!cachedServer) {
-    cachedServer = await createNestServer();
-  }
-  return cachedServer(req, res);
-}
+bootstrap();
