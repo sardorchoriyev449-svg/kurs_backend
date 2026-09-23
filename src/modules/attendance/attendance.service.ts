@@ -50,16 +50,20 @@ export class AttendanceService {
         return { success: true, length: data.length, data }
     }
 
-    // Faqat boshqa holatdan "keldi"ga o'tganda coin beradi - qayta saqlanganda
-    // (hali ham "keldi" bo'lib qolsa) coin qayta berilmaydi.
-    private async awardAttendanceCoin(previousStatus: AttendanceStatus | null, newStatus: AttendanceStatus, studentId: string, markedBy: string) {
-        if (newStatus === AttendanceStatus.keldi && previousStatus !== AttendanceStatus.keldi) {
-            await this.coinService.create({
-                student_id: studentId,
-                amount: ATTENDANCE_KELDI_COIN,
-                reason: `Darsga qatnashgani uchun`,
-            }, markedBy)
-        }
+    // "Keldi" uchun coin FAQAT BIR MARTA beriladi - holat keyinchalik
+    // "kelmadi"ga o'zgartirilib, qayta "keldi"ga qaytarilsa ham coin qayta
+    // berilmaydi (aks holda holatni oldinga-orqaga almashtirib coin farm
+    // qilish mumkin bo'lar edi).
+    private async awardAttendanceCoinIfNeeded(attendanceId: string, alreadyAwarded: boolean, newStatus: AttendanceStatus, studentId: string, markedBy: string) {
+        if (newStatus !== AttendanceStatus.keldi || alreadyAwarded) return
+
+        await this.coinService.create({
+            student_id: studentId,
+            amount: ATTENDANCE_KELDI_COIN,
+            reason: `Darsga qatnashgani uchun`,
+        }, markedBy)
+
+        await this.model.findByIdAndUpdate(attendanceId, { coin_awarded: true })
     }
 
     async create(dto: CreateAttendanceDto, markedBy: string) {
@@ -73,7 +77,7 @@ export class AttendanceService {
             marked_by: markedBy,
         })
 
-        await this.awardAttendanceCoin(null, dto.status, dto.student_id, markedBy)
+        await this.awardAttendanceCoinIfNeeded(String(newAttendance._id), false, dto.status, dto.student_id, markedBy)
 
         return { success: true, message: `Davomat belgilandi!`, data: newAttendance }
     }
@@ -82,7 +86,7 @@ export class AttendanceService {
         const results = await Promise.all(
             dto.records.map(async (record) => {
                 const existing = await this.model.findOne({ lesson_id: dto.lesson_id, student_id: record.student_id })
-                const previousStatus = existing?.status ?? null
+                const alreadyAwarded = existing?.coin_awarded ?? false
 
                 const updated = await this.model.findOneAndUpdate(
                     { lesson_id: dto.lesson_id, student_id: record.student_id },
@@ -90,7 +94,7 @@ export class AttendanceService {
                     { upsert: true, new: true },
                 )
 
-                await this.awardAttendanceCoin(previousStatus, record.status, record.student_id, markedBy)
+                await this.awardAttendanceCoinIfNeeded(String(updated._id), alreadyAwarded, record.status, record.student_id, markedBy)
 
                 return updated
             })
@@ -103,14 +107,13 @@ export class AttendanceService {
         const data = await this.model.findById(id)
         if (!data) return { success: false, message: `Davomat topilmadi!` }
 
-        const previousStatus = data.status
         const newStatus = dto.status ?? data.status
 
         const updated = await this.model.findByIdAndUpdate(id, {
             status: newStatus,
         }, { new: true })
 
-        await this.awardAttendanceCoin(previousStatus, newStatus, String(data.student_id), String(data.marked_by))
+        await this.awardAttendanceCoinIfNeeded(id, data.coin_awarded, newStatus, String(data.student_id), String(data.marked_by))
 
         return { success: true, message: `Davomat yangilandi!`, data: updated }
     }

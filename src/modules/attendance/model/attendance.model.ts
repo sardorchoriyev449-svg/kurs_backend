@@ -17,6 +17,12 @@ export class Attendance {
 
     @Prop({ type: SchemaTypes.ObjectId, ref: Users.name, required: true })
     marked_by: Types.ObjectId
+
+    // "Keldi" uchun coin faqat BIR MARTA beriladi - holat keyinchalik
+    // o'zgartirilsa/qaytarilsa ham qayta berilmasligi uchun shu belgi bilan
+    // kuzatiladi ("kelmadi"<->"keldi" almashtirib coin farm qilishning oldini olish).
+    @Prop({ type: SchemaTypes.Boolean, default: false })
+    coin_awarded: boolean
 }
 
 export const AttendanceSchema = SchemaFactory.createForClass(Attendance)

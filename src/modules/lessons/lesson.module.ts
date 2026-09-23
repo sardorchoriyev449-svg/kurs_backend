@@ -5,6 +5,7 @@ import { LessonService } from './lesson.service';
 import { Lesson, LessonSchema } from './model/lesson.model';
 import { UsersModule } from '../users/user.module';
 import { FreezeModule } from '../freeze/freeze.module';
+import { TopicModule } from '../topics/topic.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { FreezeModule } from '../freeze/freeze.module';
       { name: Lesson.name, schema: LessonSchema },
     ]),
     FreezeModule,
+    TopicModule,
   ],
   controllers: [LessonController],
   providers: [LessonService],

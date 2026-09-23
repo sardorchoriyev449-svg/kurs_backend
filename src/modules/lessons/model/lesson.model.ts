@@ -11,7 +11,7 @@ export class Lesson {
   @Prop({ required: true })
   name: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   description: string;
 
   @Prop({ type: Types.ObjectId, ref: Users.name, required: true })

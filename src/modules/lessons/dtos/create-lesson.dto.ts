@@ -1,13 +1,15 @@
 import { IsNotEmpty, IsOptional, IsString, IsMongoId, IsDateString } from 'class-validator';
 
 export class CreateLessonDto {
-  @IsNotEmpty()
+  // Kiritilmasa: mavzu tanlangan bo'lsa o'sha mavzu nomi qo'yiladi
+  // (mavzu nomining o'zi darsning nima ekanligini bildiradi).
+  @IsOptional()
   @IsString()
-  name: string;
+  name?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  description: string;
+  description?: string;
 
   @IsNotEmpty()
   @IsMongoId()
