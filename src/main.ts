@@ -19,6 +19,7 @@ async function bootstrap() {
   app.enableCors({
     origin: (getCorsHost()).split(','),
     credentials: true,
+    maxAge: 86400,
   });
 
   app.useGlobalPipes(new ValidationPipe({
