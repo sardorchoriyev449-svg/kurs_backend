@@ -7,6 +7,7 @@ import bcrypt from "bcrypt"
 import { UserRoles } from "../../common/guards/user-roles.guard";
 import { UserUpdateDtos } from "./dtos/users.update.dtos";
 import { UserRoleUpdateDtos } from "./dtos/user.role.update.dtos";
+import { UserProfileUpdateDtos } from "./dtos/user.profile.update.dtos";
 
 @Injectable()
 export class UsersService{
@@ -71,18 +72,47 @@ export class UsersService{
         }
     }
 
-    async update(dtos:UserUpdateDtos, id:ObjectId){
+    async update(dtos:UserUpdateDtos, id:ObjectId, requesterRole?:string){
+        const user = await this.model.findById(id)
+        if(!user) return {success:false, message:`Bunaqa Malumot Yoq!`}
+
+        if(user.role === UserRoles.superAdmin && requesterRole !== UserRoles.superAdmin){
+            return {success:false, message:`Faqat super admin buni o'zgartira oladi!`}
+        }
+
+        if(dtos.login && dtos.login !== user.login){
+            const exists = await this.model.findOne({login:dtos.login, _id:{$ne:id}})
+            if(exists) return {success:false, message:`Bunaqa login mavjut!`}
+        }
+
+        const password = dtos.password ? await this.hashpass(dtos.password) : user.password
+
+        await this.model.findByIdAndUpdate(id,{
+            first_name:dtos.first_name ?? user.first_name,
+            last_name:dtos.last_name ?? user.last_name,
+            data_both:dtos.data_both ?? user.data_both,
+            login:dtos.login ?? user.login,
+            password:password,
+            avatar:dtos.avatar ?? user.avatar,
+        })
+        return {
+            success:true,
+            message:`User mufaqayatliy yangilandi!`,
+        }
+    }
+
+    async updateMe(dtos:UserProfileUpdateDtos, id:string){
         const user = await this.model.findById(id)
         if(!user) return {success:false, message:`Bunaqa Malumot Yoq!`}
 
         await this.model.findByIdAndUpdate(id,{
             first_name:dtos.first_name ?? user.first_name,
             last_name:dtos.last_name ?? user.last_name,
-            data_both:dtos.data_both ?? user.data_both,
+            avatar:dtos.avatar ?? user.avatar,
         })
         return {
             success:true,
-            message:`User mufaqayatliy yangilandi!`,
+            message:`Profil muvaffaqiyatli yangilandi!`,
         }
     }
 

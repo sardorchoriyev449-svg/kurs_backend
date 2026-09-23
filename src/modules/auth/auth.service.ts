@@ -10,6 +10,7 @@ import type { Response } from 'express'
 import { getAdminLogin, getAdminPass } from "../../common/configs/admin.config";
 import { SignInDtos } from "./dtos/sign-in.dtos";
 import { RequestWithUser } from "../../common/guards/user-request.guard";
+import { getCookieOptions } from "../../common/configs/cookie-options.config";
 
 @Injectable()
 export class AuthService{
@@ -20,7 +21,6 @@ export class AuthService{
 
     async signIn(dtos:SignInDtos, res:Response){
         const data = await this.model.findOne({role:UserRoles.superAdmin})  
-        console.log(data)      
         if(!data) await this.AdminSeed();
 
         const user = await this.model.findOne({login:dtos.login})
@@ -34,20 +34,8 @@ export class AuthService{
         const accessToken = await this.AccessGenerateToken({id:user._id, role:user.role})
         const refreshToken = await this.RefreshGenerateToken({id:user._id, role:user.role})
         
-        res.cookie('accessToken',accessToken,{
-            signed:true,
-            httpOnly:true,
-            secure: true, 
-            sameSite: 'none' as const,
-            maxAge: 15 * 60 * 1000,
-        })
-        res.cookie('refreshToken',refreshToken,{
-            signed:true,
-            httpOnly:true,
-            secure: true, 
-            sameSite: 'none' as const,
-            maxAge: 15 * 24 * 60 * 60 * 1000,
-        })
+        res.cookie('accessToken',accessToken, getCookieOptions(15 * 60 * 1000))
+        res.cookie('refreshToken',refreshToken, getCookieOptions(15 * 24 * 60 * 60 * 1000))
 
         return {
             success:true,

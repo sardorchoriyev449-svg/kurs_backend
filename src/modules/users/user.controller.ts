@@ -4,9 +4,11 @@ import type { ObjectId, Types } from "mongoose";
 import { CreateUserDtos } from "./dtos/user.create.dtos";
 import { UserUpdateDtos } from "./dtos/users.update.dtos";
 import { UserRoleUpdateDtos } from "./dtos/user.role.update.dtos";
+import { UserProfileUpdateDtos } from "./dtos/user.profile.update.dtos";
 import { Protected } from "../../common/guards/protected.guard";
 import { AuthGuard } from "../../common/guards/auth.guard";
 import { RequestWithUser, RolesGuard } from "../../common/guards/user-request.guard";
+import { Roles } from "../../common/guards/roles.decorator";
 import { UserRoles } from "../../common/guards/user-roles.guard";
 
 @Controller(`users`)
@@ -30,9 +32,15 @@ export class UsersController{
         return await this.service.create(dtos)
     }
 
+    @Put('me')
+    @Roles(UserRoles.student, UserRoles.teacher, UserRoles.viwer)
+    async updateMe(@Body() dtos:UserProfileUpdateDtos, @Req() req:RequestWithUser){
+        return await this.service.updateMe(dtos, req.user.id)
+    }
+
     @Put('update/:id')
-    async update(@Body() dtos:UserUpdateDtos, @Param('id') id:ObjectId){
-        return await this.service.update(dtos,id)
+    async update(@Body() dtos:UserUpdateDtos, @Param('id') id:ObjectId, @Req() req:RequestWithUser){
+        return await this.service.update(dtos, id, req.user.role)
     }
 
     @Put(':id/role')

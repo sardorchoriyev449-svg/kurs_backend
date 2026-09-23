@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { PROTECTED_KEY } from './protected.guard';
 import { getAccessTime, getAccessToken, getRefreshToken } from '../configs/token.configs';
+import { getCookieOptions } from '../configs/cookie-options.config';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -51,13 +52,7 @@ export class AuthGuard implements CanActivate {
           { secret: getAccessToken(), expiresIn: getAccessTime() },
         );
 
-        response.cookie('accessToken', newAccessToken, {
-          signed: true,
-          httpOnly: true,
-          secure: true, 
-          sameSite: 'none' as const,
-          maxAge: 15 * 60 * 1000,
-        });
+        response.cookie('accessToken', newAccessToken, getCookieOptions(15 * 60 * 1000));
 
         request.user = decoded;
         return true;

@@ -26,6 +26,9 @@ export class Users{
     @Prop({type:SchemaTypes.String, enum:UserRoles, default:UserRoles.viwer})
     role:UserRoles
 
+    @Prop({type:SchemaTypes.String, required:false})
+    avatar:string
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(Users)
