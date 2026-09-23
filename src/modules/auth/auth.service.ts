@@ -36,11 +36,15 @@ export class AuthService{
         res.cookie('accessToken',accessToken,{
             signed:true,
             httpOnly:true,
+            secure: true, 
+            sameSite: 'none' as const,
             maxAge: 15 * 60 * 1000,
         })
         res.cookie('refreshToken',refreshToken,{
             signed:true,
             httpOnly:true,
+            secure: true, 
+            sameSite: 'none' as const,
             maxAge: 15 * 24 * 60 * 60 * 1000,
         })
 
