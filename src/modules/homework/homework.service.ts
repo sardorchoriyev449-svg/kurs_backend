@@ -10,6 +10,7 @@ import { HomeworkUpdateDtos } from "./dtos/update.homework";
 import { UserRoles } from "../../common/guards/user-roles.guard";
 import { HomeworkStatus } from "./homework-status.enum";
 import { CoinService } from "../coins/coin.service";
+import { TelegramService } from "../notifications/telegram.service";
 
 // Uy vazifasi qabul qilinganda ball (0-100) asosida coin hisoblanadi:
 // 0 ball -> 5 coin, 100 ball -> 50 coin, oralig'i chiziqli.
@@ -28,6 +29,7 @@ export class HomeWorkService {
         private readonly UserService: UsersService,
         private readonly assignmentService: HomeworkAssignmentService,
         private readonly coinService: CoinService,
+        private readonly telegramService: TelegramService,
     ) { }
 
     async getAll() {
@@ -85,6 +87,14 @@ export class HomeWorkService {
             assignment_id: assignment_id,
             student_id: req?.user?.id,
         })
+
+        const student = userResult.data as any
+        const assignment = assignmentResult.data as any
+        this.telegramService.notifyAdmin(
+            `📚 Yangi uy vazifasi topshirildi!\n` +
+            `O'quvchi: ${student.first_name} ${student.last_name}\n` +
+            `Vazifa: ${assignment.title}`
+        )
 
         return {
             data: newWork,

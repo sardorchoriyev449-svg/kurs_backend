@@ -6,6 +6,7 @@ import { Homework, HomeworkSchema } from "./model/homework.model";
 import { UsersModule } from "../users/user.module"; 
 import { HomeworkAssignmentModule } from "../homework-assignments/homework-assignment.module";
 import { CoinModule } from "../coins/coin.module";
+import { NotificationsModule } from "../notifications/notifications.module";
 
 @Module({
     imports: [
@@ -14,7 +15,8 @@ import { CoinModule } from "../coins/coin.module";
         ]),
         UsersModule,
         HomeworkAssignmentModule,
-        CoinModule
+        CoinModule,
+        NotificationsModule
     ],
     controllers: [
         HomeworkController
