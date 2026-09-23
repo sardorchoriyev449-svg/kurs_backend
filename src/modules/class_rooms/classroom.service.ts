@@ -4,11 +4,13 @@ import { Model, Types } from 'mongoose';
 import { ClassRoom, ClassRoomDocument } from './model/classroom.model';
 import { CreateClassRoomDto } from './dtos/create-classroom.dto';
 import { UpdateClassRoomDto } from './dtos/update-classroom.dto';
+import { Group } from '../groups/model/group.model'; // <-- yo'lni loyihangizdagi haqiqiy joylashuvga moslang
 
 @Injectable()
 export class ClassRoomService {
   constructor(
     @InjectModel(ClassRoom.name) private readonly model: Model<ClassRoomDocument>,
+    @InjectModel(Group.name) private readonly groupModel: Model<Group>, // <-- yangi qo'shildi
   ) {}
 
   async create(dto: CreateClassRoomDto) {
@@ -74,9 +76,42 @@ export class ClassRoomService {
   }
 
   async assignGroup(classroomId: string, groupId: string) {
-    const resolt = await this.model.findOne({_id:classroomId, group_id:groupId})
-    if(resolt) return { success:false, message:`Xona alaqachon birikan!`}
-    
+    const classroom = await this.model.findById(classroomId);
+    if (!classroom) {
+      return { success: false, message: 'Xona topilmadi!' };
+    }
+
+    const alreadyAssigned = classroom.group_id.some((g) => g.toString() === groupId);
+    if (alreadyAssigned) {
+      return { success: false, message: 'Xona alaqachon birikan!' };
+    }
+
+    const newGroup = await this.groupModel.findById(groupId);
+    if (!newGroup) {
+      return { success: false, message: 'Guruh topilmadi!' };
+    }
+
+    // Xonada allaqachon turgan guruhlar bilan kun/vaqt to'qnashuvini tekshirish
+    if (classroom.group_id.length > 0) {
+      const existingGroups = await this.groupModel.find({
+        _id: { $in: classroom.group_id },
+      });
+
+      for (const existingGroup of existingGroups) {
+        const hasSharedDay = (existingGroup.lesson_days || []).some((day) =>
+          (newGroup.lesson_days || []).includes(day),
+        );
+        if (!hasSharedDay) continue;
+
+        if (this.isTimeOverlap(existingGroup.lesson_time, newGroup.lesson_time)) {
+          return {
+            success: false,
+            message: `Xona shu kun/vaqtda band: "${existingGroup.name}" guruhi (${existingGroup.lesson_time}) bilan to'qnashadi!`,
+          };
+        }
+      }
+    }
+
     const updatedRoom = await this.model.findByIdAndUpdate(
       classroomId,
       { $addToSet: { group_id: new Types.ObjectId(groupId) } },
@@ -103,5 +138,23 @@ export class ClassRoomService {
       success: true,
       message: "Xona o'chirildi!",
     };
+  }
+
+  private isTimeOverlap(rangeA: string, rangeB: string): boolean {
+    const a = this.parseTimeRange(rangeA);
+    const b = this.parseTimeRange(rangeB);
+    if (!a || !b) return true;
+    return a.start < b.end && b.start < a.end;
+  }
+
+  private parseTimeRange(range: string): { start: number; end: number } | null {
+    if (!range) return null;
+    const match = range.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+    if (!match) return null;
+    const [, h1, m1, h2, m2] = match;
+    const start = Number(h1) * 60 + Number(m1);
+    const end = Number(h2) * 60 + Number(m2);
+    if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return null;
+    return { start, end };
   }
 }
