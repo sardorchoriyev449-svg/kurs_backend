@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { MongooseModule } from '@nestjs/mongoose'
+import { TelegrafModule } from 'nestjs-telegraf'
 import { getMongoUrl } from './common/configs/db.config';
+import { getTelegramBotToken } from './common/configs/telegram.config';
 import { UsersModule } from './modules/users/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
@@ -30,6 +32,9 @@ import { FreezeModule } from './modules/freeze/freeze.module';
       global: true
     }),
     MongooseModule.forRoot(getMongoUrl()),
+    TelegrafModule.forRoot({
+      token: getTelegramBotToken(),
+    }),
     UsersModule,
     AuthModule,
     GroupModule,

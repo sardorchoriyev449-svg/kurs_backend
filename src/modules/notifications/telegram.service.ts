@@ -1,23 +1,19 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
+import { InjectBot } from "nestjs-telegraf";
 import { Telegraf } from "telegraf";
-import { getTelegramAdminId, getTelegramBotToken } from "../../common/configs/telegram.config";
+import { getTelegramAdminId } from "../../common/configs/telegram.config";
 
 @Injectable()
-export class TelegramService implements OnModuleInit {
+export class TelegramService {
     private readonly logger = new Logger(TelegramService.name);
-    private bot: Telegraf | null = null;
 
-    onModuleInit() {
-        const token = getTelegramBotToken();
-        if (!token) return;
-        this.bot = new Telegraf(token);
-    }
+    constructor(@InjectBot() private readonly bot: Telegraf) {}
 
     // Xatolik bo'lsa ham asosiy amal (masalan vazifa topshirish) to'xtamasligi
     // uchun xatoni faqat log qilamiz, tashqariga otmaymiz.
     async notifyAdmin(text: string): Promise<void> {
         const chatId = getTelegramAdminId();
-        if (!this.bot || !chatId) return;
+        if (!chatId) return;
 
         try {
             await this.bot.telegram.sendMessage(chatId, text);
