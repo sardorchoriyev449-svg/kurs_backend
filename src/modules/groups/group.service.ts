@@ -107,37 +107,6 @@ export class GroupService{
         } 
     }
 
-    async setStudentSuspension(group_id:string, studentId:string, suspended:boolean){
-        const group = await this.model.findById(group_id)
-        if(!group) return {success:false, message:`Bunday grupa yoq!`}
-
-        // Avval eski yozuvni tozalab olamiz (qayta muzlatilganda vaqt yangilansin)
-        await this.model.findByIdAndUpdate(group_id,{
-            $pull:{suspended_students: {student: studentId}}
-        })
-
-        if(suspended){
-            await this.model.findByIdAndUpdate(group_id,{
-                $push:{suspended_students: {student: studentId, suspended_at: new Date()}}
-            })
-        }
-
-        return {
-            success:true,
-            message: suspended ? `O'quvchi muzlatildi` : `O'quvchi qayta faollashtirildi`,
-        }
-    }
-
-    // Talaba muzlatilgan bo'lsa qachon muzlatilganini qaytaradi, aks holda null
-    async getStudentSuspendedAt(group_id:string, studentId:string):Promise<Date | null>{
-        const group = await this.model.findOne(
-            {_id:group_id, 'suspended_students.student':studentId},
-            {'suspended_students.$':1}
-        )
-        if(!group || !group.suspended_students || group.suspended_students.length === 0) return null
-        return group.suspended_students[0].suspended_at
-    }
-
     async addStudentGroup(group_id:ObjectId, dtos:addStudentGroup){
         const group = await this.model.findById(group_id)
         if(!group) return {success:false, message:`Bunday grupa yoq!`}

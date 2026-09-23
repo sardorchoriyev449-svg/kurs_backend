@@ -5,13 +5,13 @@ import { Lesson, LessonDocument } from './model/lesson.model';
 import { CreateLessonDto } from './dtos/create-lesson.dto';
 import { UpdateLessonDto } from './dtos/update-lesson.dtos';
 import { RequestWithUser } from '../../common/guards/user-request.guard';
-import { Group } from '../groups/model/group.model';
+import { FreezeService } from '../freeze/freeze.service';
 
 @Injectable()
 export class LessonService {
   constructor(
     @InjectModel(Lesson.name) private readonly model: Model<Lesson>,
-    @InjectModel(Group.name) private readonly groupModel: Model<Group>,
+    private readonly freezeService: FreezeService,
   ) {}
 
   async create(dto: CreateLessonDto, authorId: string) {
@@ -51,16 +51,9 @@ export class LessonService {
     // Muzlatilgan talaba muzlatilgan payttagacha (aniq vaqti bilan) qo'shilgan
     // darslarni ko'raveradi - to'lov qilingan davr uchun kirish saqlanadi.
     // Muzlatilgandan keyin qo'shilgan yangi darslar esa ko'rinmaydi.
-    let suspendedAt: Date | null = null;
-    if (requestingStudentId) {
-      const group = await this.groupModel.findOne(
-        { _id: groupId, 'suspended_students.student': requestingStudentId },
-        { 'suspended_students.$': 1 },
-      );
-      if (group?.suspended_students?.length) {
-        suspendedAt = group.suspended_students[0].suspended_at;
-      }
-    }
+    const suspendedAt = requestingStudentId
+      ? await this.freezeService.getSuspendedAt(groupId, requestingStudentId)
+      : null;
 
     const query: Record<string, unknown> = { group_id: new Types.ObjectId(groupId) };
     if (suspendedAt) {

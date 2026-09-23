@@ -12,7 +12,6 @@ import { GroupService } from './group.service';
 import { GroupCreateDto } from './dtos/group.create.dtos';
 import { GroupUpdateDtos } from './dtos/group.update.dtos';
 import { addStudentGroup } from './dtos/group.add.student';
-import { GroupSuspendStudentDtos } from './dtos/group.suspend.dtos';
 import { Types } from 'mongoose';
 import { RequestWithUser, RolesGuard } from '../../common/guards/user-request.guard';
 import { AuthGuard } from '../../common/guards/auth.guard';
@@ -84,16 +83,5 @@ export class GroupController {
     @Body() dto: addStudentGroup,
   ) {
     return this.groupService.addStudentGroup(id as any, dto);
-  }
-
-  // Faqat admin/super_admin (default RolesGuard cheklovi) - to'lov qilmagan
-  // o'quvchini shu guruh doirasida muzlatish/faollashtirish.
-  @Put(':id/students/:studentId/suspension')
-  async setStudentSuspension(
-    @Param('id') id: string,
-    @Param('studentId') studentId: string,
-    @Body() dto: GroupSuspendStudentDtos,
-  ) {
-    return this.groupService.setStudentSuspension(id, studentId, dto.suspended);
   }
 }

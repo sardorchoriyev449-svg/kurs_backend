@@ -4,14 +4,14 @@ import { LessonController } from './lesson.controller';
 import { LessonService } from './lesson.service';
 import { Lesson, LessonSchema } from './model/lesson.model';
 import { UsersModule } from '../users/user.module';
-import { Group, GroupSchema } from '../groups/model/group.model';
+import { FreezeModule } from '../freeze/freeze.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Lesson.name, schema: LessonSchema },
-      { name: Group.name, schema: GroupSchema },
     ]),
+    FreezeModule,
   ],
   controllers: [LessonController],
   providers: [LessonService],

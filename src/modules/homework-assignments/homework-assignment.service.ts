@@ -7,6 +7,7 @@ import { UpdateAssignmentDto } from "./dtos/update-assignment.dto";
 import { Group } from "../groups/model/group.model";
 import { Homework } from "../homework/model/homework.model";
 import { HomeworkStatus } from "../homework/homework-status.enum";
+import { FreezeService } from "../freeze/freeze.service";
 
 @Injectable()
 export class HomeworkAssignmentService {
@@ -14,6 +15,7 @@ export class HomeworkAssignmentService {
         @InjectModel(HomeworkAssignment.name) private readonly model: Model<HomeworkAssignment>,
         @InjectModel(Group.name) private readonly groupModel: Model<Group>,
         @InjectModel(Homework.name) private readonly homeworkModel: Model<Homework>,
+        private readonly freezeService: FreezeService,
     ) {}
 
     async getByGroup(groupId: string, requestingStudentId?: string) {
@@ -21,11 +23,7 @@ export class HomeworkAssignmentService {
         // vazifalarni ko'raveradi, keyin qo'shilganlari ko'rinmaydi.
         const query: Record<string, unknown> = { group_id: groupId }
         if (requestingStudentId) {
-            const group = await this.groupModel.findOne(
-                { _id: groupId, 'suspended_students.student': requestingStudentId },
-                { 'suspended_students.$': 1 },
-            )
-            const suspendedAt = group?.suspended_students?.length ? group.suspended_students[0].suspended_at : null
+            const suspendedAt = await this.freezeService.getSuspendedAt(groupId, requestingStudentId)
             if (suspendedAt) {
                 query.createdAt = { $lte: suspendedAt }
             }
@@ -110,11 +108,7 @@ export class HomeworkAssignmentService {
         const assignment = await this.model.findById(assignmentId)
         if (!assignment) return false
 
-        const group = await this.groupModel.findOne(
-            { _id: assignment.group_id, 'suspended_students.student': studentId },
-            { 'suspended_students.$': 1 },
-        )
-        const suspendedAt = group?.suspended_students?.length ? group.suspended_students[0].suspended_at : null
+        const suspendedAt = await this.freezeService.getSuspendedAt(String(assignment.group_id), studentId)
         if (!suspendedAt) return true
 
         const assignmentCreatedAt = (assignment as any).createdAt as Date

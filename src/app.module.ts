@@ -20,6 +20,7 @@ import { GiftModule } from './modules/gifts/gift.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { TopicModule } from './modules/topics/topic.module';
 import { HomeworkAssignmentModule } from './modules/homework-assignments/homework-assignment.module';
+import { FreezeModule } from './modules/freeze/freeze.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -44,6 +45,7 @@ import { HomeworkAssignmentModule } from './modules/homework-assignments/homewor
     GiftModule,
     StaffModule,
     TopicModule,
+    FreezeModule,
   ],
   providers: [{
     provide:APP_GUARD,
