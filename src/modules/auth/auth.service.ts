@@ -19,7 +19,8 @@ export class AuthService{
     ){}
 
     async signIn(dtos:SignInDtos, res:Response){
-        const data = await this.model.findOne({role:UserRoles.superAdmin})        
+        const data = await this.model.findOne({role:UserRoles.superAdmin})  
+        console.log(data)      
         if(!data) await this.AdminSeed();
 
         const user = await this.model.findOne({login:dtos.login})
