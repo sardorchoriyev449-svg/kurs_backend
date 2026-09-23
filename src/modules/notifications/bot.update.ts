@@ -6,16 +6,18 @@ import { TelegramSessionService } from "./telegram-session.service";
 import { UserRoles } from "../../common/guards/user-roles.guard";
 
 function helpTextForRole(role:string):string{
+    const common = `/profil - Shaxsiy ma'lumotlaringiz\n/help - Shu ro'yxat\n/exit - Tizimdan chiqish`;
+
     if(role === UserRoles.admin || role === UserRoles.superAdmin){
-        return `👑 Admin buyruqlari:\n/profil - Shaxsiy ma'lumotlaringiz\n/help - Shu ro'yxat`;
+        return `👑 Admin buyruqlari:\n${common}`;
     }
     if(role === UserRoles.teacher){
-        return `🎓 O'qituvchi buyruqlari:\n/profil - Shaxsiy ma'lumotlaringiz\n/help - Shu ro'yxat`;
+        return `🎓 O'qituvchi buyruqlari:\n${common}`;
     }
     if(role === UserRoles.student){
-        return `📚 O'quvchi buyruqlari:\n/profil - Shaxsiy ma'lumotlaringiz\n/help - Shu ro'yxat`;
+        return `📚 O'quvchi buyruqlari:\n${common}`;
     }
-    return `/profil - Shaxsiy ma'lumotlaringiz\n/help - Shu ro'yxat`;
+    return common;
 }
 
 @Update()
@@ -68,6 +70,22 @@ export class BotUpdate {
         await ctx.reply(
             `Ism: ${user.first_name} ${user.last_name}\nLogin: ${user.login}\nRol: ${user.role}`
         );
+    }
+
+    @Command('exit')
+    async exit(@Ctx() ctx:Context){
+        const chatId = String(ctx.chat!.id);
+        const user = await this.usersService.getByTelegramChatId(chatId);
+
+        this.session.clear(chatId);
+
+        if(!user){
+            await ctx.reply("Siz allaqachon tizimga ulanmagansiz.");
+            return;
+        }
+
+        await this.usersService.unlinkTelegramChat(chatId);
+        await ctx.reply("Tizimdan chiqdingiz. Qayta kirish uchun /start bosing.");
     }
 
     @On('text')
