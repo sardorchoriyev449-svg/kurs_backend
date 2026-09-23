@@ -15,10 +15,17 @@ export class TelegramService {
         const chatId = getTelegramAdminId();
         if (!chatId) return;
 
+        await this.sendToChat(chatId, text);
+    }
+
+    // Har qanday (Telegram bot orqali tizimga kirgan) foydalanuvchiga xabar yuborish.
+    async sendToChat(chatId: string, text: string): Promise<void> {
+        if (!chatId) return;
+
         try {
             await this.bot.telegram.sendMessage(chatId, text);
         } catch (err) {
-            this.logger.error(`Telegram xabar yuborishda xatolik: ${err}`);
+            this.logger.error(`Telegram xabar yuborishda xatolik (${chatId}): ${err}`);
         }
     }
 }

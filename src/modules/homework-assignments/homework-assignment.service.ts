@@ -8,6 +8,8 @@ import { Group } from "../groups/model/group.model";
 import { Homework } from "../homework/model/homework.model";
 import { HomeworkStatus } from "../homework/homework-status.enum";
 import { FreezeService } from "../freeze/freeze.service";
+import { TelegramService } from "../notifications/telegram.service";
+import { getFrontendUrl } from "../../common/configs/frontend.config";
 
 @Injectable()
 export class HomeworkAssignmentService {
@@ -16,6 +18,7 @@ export class HomeworkAssignmentService {
         @InjectModel(Group.name) private readonly groupModel: Model<Group>,
         @InjectModel(Homework.name) private readonly homeworkModel: Model<Homework>,
         private readonly freezeService: FreezeService,
+        private readonly telegramService: TelegramService,
     ) {}
 
     async getByGroup(groupId: string, requestingStudentId?: string) {
@@ -83,7 +86,26 @@ export class HomeworkAssignmentService {
             created_by: createdBy,
         })
 
+        this.notifyGroupStudents(dto.group_id, dto.title)
+
         return { success: true, message: `Vazifa yaratildi!`, data: newAssignment }
+    }
+
+    // Guruhdagi, Telegram bot orqali tizimga kirgan har bir talabaga yangi
+    // vazifa haqida shaxsan xabar yuboradi. Xato bo'lsa ham asosiy amalni
+    // (vazifa yaratishni) to'xtatmasligi uchun await qilinmaydi.
+    private async notifyGroupStudents(groupId: string, title: string) {
+        const group = await this.groupModel.findById(groupId).populate('students', 'telegram_chat_id')
+        if (!group?.students) return
+
+        const link = `${getFrontendUrl()}/student/homework`
+        const text = `📌 Sizga yangi uy ishi berildi!\nMavzu: ${title}\n\nMarhamat, tanishib chiqing: ${link}`
+
+        for (const student of group.students as any[]) {
+            if (student?.telegram_chat_id) {
+                this.telegramService.sendToChat(student.telegram_chat_id, text)
+            }
+        }
     }
 
     async update(id: string, dto: UpdateAssignmentDto) {

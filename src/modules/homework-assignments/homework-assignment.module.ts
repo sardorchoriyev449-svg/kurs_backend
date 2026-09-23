@@ -6,6 +6,7 @@ import { HomeworkAssignmentController } from "./homework-assignment.controller";
 import { Group, GroupSchema } from "../groups/model/group.model";
 import { Homework, HomeworkSchema } from "../homework/model/homework.model";
 import { FreezeModule } from "../freeze/freeze.module";
+import { NotificationsModule } from "../notifications/notifications.module";
 
 @Module({
     imports: [
@@ -18,6 +19,7 @@ import { FreezeModule } from "../freeze/freeze.module";
             { name: Homework.name, schema: HomeworkSchema },
         ]),
         FreezeModule,
+        NotificationsModule,
     ],
     controllers: [HomeworkAssignmentController],
     providers: [HomeworkAssignmentService],
