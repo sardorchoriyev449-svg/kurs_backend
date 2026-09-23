@@ -139,6 +139,31 @@ export class UsersService{
             data:data,
         }
     }
+
+    // Telegram bot login oqimi uchun: login/parolni tekshiradi, to'g'ri bo'lsa
+    // foydalanuvchini qaytaradi, aks holda null.
+    async verifyCredentials(login:string, password:string){
+        const user = await this.model.findOne({login})
+        if(!user) return null
+
+        const isSame = await bcrypt.compare(password, user.password)
+        if(!isSame) return null
+
+        return user
+    }
+
+    async linkTelegramChat(userId:string, chatId:string){
+        await this.model.findByIdAndUpdate(userId, {telegram_chat_id:chatId})
+    }
+
+    async unlinkTelegramChat(chatId:string){
+        await this.model.findOneAndUpdate({telegram_chat_id:chatId}, {telegram_chat_id:null})
+    }
+
+    async getByTelegramChatId(chatId:string){
+        return await this.model.findOne({telegram_chat_id:chatId})
+    }
+
     private async hashpass(pass:string){
         return await bcrypt.hash(pass,10);
     }

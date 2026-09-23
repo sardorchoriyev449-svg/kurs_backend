@@ -29,6 +29,11 @@ export class Users{
     @Prop({type:SchemaTypes.String, required:false})
     avatar:string
 
+    // Telegram bot orqali login qilgandan keyin shu chat ID saqlanadi -
+    // shundan keyin bot shu foydalanuvchini tanib, roliga mos buyruqlarni beradi.
+    @Prop({type:SchemaTypes.String, required:false})
+    telegram_chat_id:string
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(Users)
