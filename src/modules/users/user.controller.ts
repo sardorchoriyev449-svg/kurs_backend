@@ -50,7 +50,7 @@ export class UsersController{
         @Body() dto: UserRoleUpdateDtos,
         @Req() req: RequestWithUser,
     ) {
-        return await this.service.roleUpdate(id, dto, req.user.id);
+        return await this.service.roleUpdate(id, dto, req.user.id, req.user.role);
     }
 
     @Get(':id')

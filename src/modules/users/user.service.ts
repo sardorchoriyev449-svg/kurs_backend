@@ -116,9 +116,16 @@ export class UsersService{
         }
     }
 
-    async roleUpdate(id: string, dto: UserRoleUpdateDtos, currentUserId: string) {
+    async roleUpdate(id: string, dto: UserRoleUpdateDtos, currentUserId: string, requesterRole?: string) {
         if (String(id) === String(currentUserId)) {
             return { success:false, message:`O'zingizning rolingizni o'zgartira olmaysiz!` };
+        }
+
+        // Oddiy admin boshqa hech kimni "admin" qila olmaydi - faqat super admin
+        // yangi admin tayinlashi mumkin (aks holda admin aylanma yo'l bilan
+        // o'zi xohlagan odamni admin darajasiga chiqarib yuborishi mumkin edi).
+        if (dto.role === UserRoles.admin && requesterRole !== UserRoles.superAdmin) {
+            return { success:false, message:`Faqat super admin boshqa foydalanuvchini admin qila oladi!` };
         }
 
         const user = await this.model.findById(id);
