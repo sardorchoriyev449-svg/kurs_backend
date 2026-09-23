@@ -16,7 +16,21 @@ export class HomeworkAssignmentService {
         @InjectModel(Homework.name) private readonly homeworkModel: Model<Homework>,
     ) {}
 
-    async getByGroup(groupId: string) {
+    async getByGroup(groupId: string, requestingStudentId?: string) {
+        if (requestingStudentId) {
+            const suspended = await this.groupModel.exists({
+                _id: groupId,
+                suspended_students: requestingStudentId,
+            })
+            if (suspended) {
+                return {
+                    success: false,
+                    message: `Siz ushbu guruhda vaqtincha muzlatilgansiz. Administrator bilan bog'laning.`,
+                    data: [],
+                }
+            }
+        }
+
         const data = await this.model.find({ group_id: groupId })
             .populate('topic_id', 'name')
             .sort({ createdAt: -1 })
@@ -87,6 +101,17 @@ export class HomeworkAssignmentService {
         }, { new: true })
 
         return { success: true, message: `Vazifa yangilandi!`, data: updated }
+    }
+
+    async isStudentSuspendedForAssignment(assignmentId: string, studentId: string): Promise<boolean> {
+        const assignment = await this.model.findById(assignmentId)
+        if (!assignment) return false
+
+        const suspended = await this.groupModel.exists({
+            _id: assignment.group_id,
+            suspended_students: studentId,
+        })
+        return !!suspended
     }
 
     async delete(id: string) {

@@ -41,8 +41,9 @@ export class LessonController {
 
   @Get('group/:groupId')
   @Roles(UserRoles.teacher, UserRoles.student)
-  async getByGroup(@Param('groupId') groupId: string) {
-    return this.lessonService.getByGroup(groupId);
+  async getByGroup(@Param('groupId') groupId: string, @Req() req: RequestWithUser) {
+    const requestingStudentId = req.user.role === UserRoles.student ? req.user.id : undefined;
+    return this.lessonService.getByGroup(groupId, requestingStudentId);
   }
 
   @Get(':id')

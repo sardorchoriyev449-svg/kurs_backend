@@ -107,6 +107,34 @@ export class GroupService{
         } 
     }
 
+    async setStudentSuspension(group_id:string, studentId:string, suspended:boolean){
+        const group = await this.model.findById(group_id)
+        if(!group) return {success:false, message:`Bunday grupa yoq!`}
+
+        if(suspended){
+            await this.model.findByIdAndUpdate(group_id,{
+                $addToSet:{suspended_students: studentId}
+            })
+        } else {
+            await this.model.findByIdAndUpdate(group_id,{
+                $pull:{suspended_students: studentId}
+            })
+        }
+
+        return {
+            success:true,
+            message: suspended ? `O'quvchi muzlatildi` : `O'quvchi qayta faollashtirildi`,
+        }
+    }
+
+    async isStudentSuspended(group_id:string, studentId:string):Promise<boolean>{
+        const group = await this.model.findOne({
+            _id:group_id,
+            suspended_students: studentId,
+        })
+        return !!group
+    }
+
     async addStudentGroup(group_id:ObjectId, dtos:addStudentGroup){
         const group = await this.model.findById(group_id)
         if(!group) return {success:false, message:`Bunday grupa yoq!`}

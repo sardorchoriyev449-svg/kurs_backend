@@ -22,6 +22,10 @@ export class Group{
 
     @Prop({type:SchemaTypes.ObjectId, ref:Course.name})
     course_id: Types.ObjectId
+
+    // To'lov qilmagani uchun vaqtincha muzlatilgan o'quvchilar (shu guruh doirasida)
+    @Prop({type:[{type:SchemaTypes.ObjectId, ref:Users.name}], default:[]})
+    suspended_students:Types.ObjectId[]
 }
 
 export const GroupSchema = SchemaFactory.createForClass(Group)

@@ -5,11 +5,13 @@ import { Lesson, LessonDocument } from './model/lesson.model';
 import { CreateLessonDto } from './dtos/create-lesson.dto';
 import { UpdateLessonDto } from './dtos/update-lesson.dtos';
 import { RequestWithUser } from '../../common/guards/user-request.guard';
+import { Group } from '../groups/model/group.model';
 
 @Injectable()
 export class LessonService {
   constructor(
     @InjectModel(Lesson.name) private readonly model: Model<Lesson>,
+    @InjectModel(Group.name) private readonly groupModel: Model<Group>,
   ) {}
 
   async create(dto: CreateLessonDto, authorId: string) {
@@ -45,7 +47,21 @@ export class LessonService {
     };
   }
 
-  async getByGroup(groupId: string) {
+  async getByGroup(groupId: string, requestingStudentId?: string) {
+    if (requestingStudentId) {
+      const suspended = await this.groupModel.exists({
+        _id: groupId,
+        suspended_students: requestingStudentId,
+      });
+      if (suspended) {
+        return {
+          success: false,
+          message: `Siz ushbu guruhda vaqtincha muzlatilgansiz. Administrator bilan bog'laning.`,
+          data: [],
+        };
+      }
+    }
+
     const lessons = await this.model
       .find({ group_id: new Types.ObjectId(groupId) })
       .populate('author', 'first_name last_name')
