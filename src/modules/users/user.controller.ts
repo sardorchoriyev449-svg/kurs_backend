@@ -27,6 +27,24 @@ export class UsersController{
     async getAllStudents(){
         return await this.service.getAllStudents()
     }
+
+    // ESLATMA: bu literal yo'llar (':id' catch-all'dan OLDIN turishi shart,
+    // aks holda "archive" so'zi id sifatida noto'g'ri ushlanadi.
+    @Get('archive')
+    async getArchived(){
+        return await this.service.getArchived()
+    }
+
+    @Put('archive/:id/restore')
+    async restoreFromArchive(@Param('id') id:string){
+        return await this.service.restoreFromArchive(id)
+    }
+
+    @Delete('archive/:id')
+    async permanentDelete(@Param('id') id:string){
+        return await this.service.permanentDelete(id)
+    }
+
     @Post()
     async create(@Body() dtos:CreateUserDtos){
         return await this.service.create(dtos)
@@ -59,7 +77,7 @@ export class UsersController{
     }
 
     @Delete(':id')
-    async delete(@Param('id') id:ObjectId ){
-        return await this.service.delete(id)
+    async delete(@Param('id') id:ObjectId, @Req() req:RequestWithUser){
+        return await this.service.delete(id, req.user.role)
     }
 }

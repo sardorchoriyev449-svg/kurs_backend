@@ -34,6 +34,12 @@ export class Users{
     @Prop({type:SchemaTypes.String, required:false})
     telegram_chat_id:string
 
+    // "O'chirish" bosilganda foydalanuvchi butunlay o'chmaydi, shu belgi bilan
+    // arxivga o'tkaziladi - faol ro'yxatlarda ko'rinmay qoladi, lekin arxivdan
+    // qayta tiklash mumkin. Faqat arxivning o'zidan o'chirilsa, butunlay o'chadi.
+    @Prop({type:SchemaTypes.Boolean, default:false})
+    archived:boolean
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(Users)

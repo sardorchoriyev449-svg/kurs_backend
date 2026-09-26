@@ -16,7 +16,7 @@ export class UsersService{
     ){}
 
     async getAll(){
-        const data = await this.model.find()
+        const data = await this.model.find({archived:{$ne:true}})
         return {
             success:true,
             data:data,
@@ -59,16 +59,59 @@ export class UsersService{
         }
     }
 
-    async delete(id:ObjectId){
+    // Foydalanuvchi butunlay o'chmaydi - arxivga o'tkaziladi (faol
+    // ro'yxatlarda ko'rinmay qoladi). Butunlay o'chirish faqat arxivning
+    // o'zidan, permanentDelete() orqali amalga oshadi.
+    async delete(id:ObjectId, requesterRole?:string){
         const data = await this.model.findOne({_id:id})
 
         if(!data) return {success:false, message:`Bunaqa Malumot Yoq!`}
 
-        await this.model.findByIdAndDelete({_id:id})
+        if(data.role === UserRoles.superAdmin && requesterRole !== UserRoles.superAdmin){
+            return {success:false, message:`Faqat super admin buni arxivlashi mumkin!`}
+        }
+
+        await this.model.findByIdAndUpdate(id, {archived:true})
 
         return {
             success:true,
-            message:`Malumot Tozalandi!`,
+            message:`Foydalanuvchi arxivga o'tkazildi!`,
+        }
+    }
+
+    async getArchived(){
+        const data = await this.model.find({archived:true})
+        return {
+            success:true,
+            length:data.length,
+            data:data,
+        }
+    }
+
+    async restoreFromArchive(id:string){
+        const data = await this.model.findOne({_id:id, archived:true})
+        if(!data) return {success:false, message:`Arxivda bunaqa foydalanuvchi yo'q!`}
+
+        await this.model.findByIdAndUpdate(id, {archived:false})
+
+        return {
+            success:true,
+            message:`Foydalanuvchi tiklandi!`,
+        }
+    }
+
+    // Faqat arxivdagi (allaqachon "o'chirilgan") foydalanuvchini butunlay
+    // o'chiradi - shu orqali faol foydalanuvchi to'g'ridan-to'g'ri, arxivni
+    // chetlab o'tib butunlay o'chirilishi mumkin emas.
+    async permanentDelete(id:string){
+        const data = await this.model.findOne({_id:id, archived:true})
+        if(!data) return {success:false, message:`Arxivda bunaqa foydalanuvchi yo'q!`}
+
+        await this.model.findByIdAndDelete(id)
+
+        return {
+            success:true,
+            message:`Foydalanuvchi butunlay o'chirildi!`,
         }
     }
 
@@ -139,7 +182,7 @@ export class UsersService{
         return { success:true, message: "Rol yangilandi" };
     }
     async getAllStudents(){
-        const data = await this.model.find({role:UserRoles.student})
+        const data = await this.model.find({role:UserRoles.student, archived:{$ne:true}})
         return {
             success:true,
             length:data.length,
